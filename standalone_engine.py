@@ -40,11 +40,9 @@ MIN_PRICE_RANGE = 0.0
 MAX_LOOKAHEAD = 8
 MAX_CLOSE_VIOL = 0.0
 
-# Twilio Settings (Configured via Environment Variables)
-TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
-TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
-TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER', 'whatsapp:+14155238886') # Default Twilio Sandbox number
-MY_WHATSAPP_NUMBER = os.getenv('MY_WHATSAPP_NUMBER')
+# Telegram Settings (Configured via Environment Variables)
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 # State Management to prevent duplicate alerts
 SENT_ALERTS = set()
@@ -199,43 +197,44 @@ def detect_three_point_trendlines(pivot_idx, wick_array, close_array, side):
 #               ALERT NOTIFICATION           #
 # ========================================== #
 
-def send_whatsapp_alert(message_body):
-    if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, MY_WHATSAPP_NUMBER]):
-        print("Required Twilio credentials missing in ENV. Skipping WhatsApp alert.")
+def send_telegram_alert(message_body):
+    if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
+        print("Required Telegram credentials missing in ENV. Skipping Telegram alert.")
         return
 
-    url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_ACCOUNT_SID}/Messages.json"
-    auth = (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    to_number = MY_WHATSAPP_NUMBER if MY_WHATSAPP_NUMBER.startswith('whatsapp:') else f'whatsapp:{MY_WHATSAPP_NUMBER}'
-    from_number = TWILIO_WHATSAPP_NUMBER if TWILIO_WHATSAPP_NUMBER.startswith('whatsapp:') else f'whatsapp:{TWILIO_WHATSAPP_NUMBER}'
-    data = {"From": from_number, "To": to_number, "Body": message_body}
-    
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    data = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message_body,
+        "parse_mode": "HTML"
+    }
+
     try:
-        response = requests.post(url, auth=auth, data=data)
-        if response.status_code in [200, 201]:
-            print("🚀 WhatsApp alert sent successfully!")
+        response = requests.post(url, data=data)
+        if response.status_code == 200:
+            print("🚀 Telegram alert sent successfully!")
         else:
-            print(f"❌ Failed to send WhatsApp alert: {response.text}")
+            print(f"❌ Failed to send Telegram alert: {response.text}")
     except Exception as e:
-        print(f"❌ Error sending WhatsApp alert: {e}")
+        print(f"❌ Error sending Telegram alert: {e}")
 
 def send_alert(pattern):
     detection_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     message = (
-        f"🚨 *ALERT TRIGGERED AT:* {detection_time}\n\n"
-        f"💎 *PATTERN:* {pattern['side'].upper()} Trendline ({pattern['direction']})\n"
-        f"📉 *SYMBOL :* {SYMBOL} ({RESOLUTION})\n\n"
-        f"1️⃣ *Pivot 1:* {pattern['datetime_1']} @ *{pattern['price_1']:.2f}*\n"
-        f"2️⃣ *Pivot 2:* {pattern['datetime_2']} @ *{pattern['price_2']:.2f}*\n"
-        f"3️⃣ *Pivot 3:* {pattern['datetime_3']} @ *{pattern['price_3']:.2f}* (Trigger)\n\n"
-        f"📊 *METRICS:*\n"
+        f"🚨 <b>ALERT TRIGGERED AT:</b> {detection_time}\n\n"
+        f"💎 <b>PATTERN:</b> {pattern['side'].upper()} Trendline ({pattern['direction']})\n"
+        f"📉 <b>SYMBOL :</b> {SYMBOL} ({RESOLUTION})\n\n"
+        f"1️⃣ <b>Pivot 1:</b> {pattern['datetime_1']} @ <b>{pattern['price_1']:.2f}</b>\n"
+        f"2️⃣ <b>Pivot 2:</b> {pattern['datetime_2']} @ <b>{pattern['price_2']:.2f}</b>\n"
+        f"3️⃣ <b>Pivot 3:</b> {pattern['datetime_3']} @ <b>{pattern['price_3']:.2f}</b> (Trigger)\n\n"
+        f"📊 <b>METRICS:</b>\n"
         f"• Quality (R²) : {pattern['r2']:.4f}\n"
         f"• Slope : {pattern['slope']:.4f}\n"
         f"• Duration : {pattern['total_span']} candles\n"
         f"• Price Range : {pattern['price_range']:.2f}\n"
     )
-    print(f"\n{'='*60}\n{message.replace('*', '')}{'='*60}\n")
-    send_whatsapp_alert(message)
+    print(f"\n{'='*60}\n{message.replace('<b>', '').replace('</b>', '')}{'='*60}\n")  
+    send_telegram_alert(message)
 
 # ========================================== #
 #               MAIN LOOP ENGINE             #
