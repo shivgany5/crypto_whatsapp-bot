@@ -5,7 +5,6 @@ import numpy as np
 import requests
 from datetime import datetime
 import plotly.graph_objects as go
-import plotly.io as pio
 from scipy import stats
 import traceback
 from itertools import combinations
@@ -18,10 +17,10 @@ except ImportError:
     pass
 
 # Configure Kaleido for Railway deployment
-# Set Chromium path for Kaleido (Docker sets CHROMIUM_PATH env variable)
+# Set Chromium path for Kaleido using environment variable (recommended approach)
 chromium_path = os.getenv('CHROMIUM_PATH', '/usr/bin/chromium')
 if os.path.exists(chromium_path):
-    pio.kaleido.scope.chromium_path = chromium_path
+    os.environ['KALEIDO_CHROMIUM_PATH'] = chromium_path
     print(f"[INFO] Kaleido configured to use Chromium at: {chromium_path}")
 else:
     print(f"[WARNING] Chromium not found at {chromium_path}, image export may fail")

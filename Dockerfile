@@ -23,6 +23,7 @@ COPY . .
 
 # Set Chromium path for Kaleido
 ENV CHROMIUM_PATH=/usr/bin/chromium
+ENV KALEIDO_CHROMIUM_PATH=/usr/bin/chromium
 
 # Run the application
 CMD ["python", "standalone_engine.py"]
