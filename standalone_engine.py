@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime
+import plotly.graph_objects as go
 from scipy import stats
 import traceback
 from itertools import combinations
@@ -39,6 +40,7 @@ MAX_TOTAL_SPAN = 300
 MIN_PRICE_RANGE = 0.0
 MAX_LOOKAHEAD = 8
 MAX_CLOSE_VIOL = 0.0
+PADDING_CANDLES = 50
 
 # Telegram Settings (Configured via Environment Variables)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -197,20 +199,114 @@ def detect_three_point_trendlines(pivot_idx, wick_array, close_array, side):
 #               ALERT NOTIFICATION           #
 # ========================================== #
 
-def send_telegram_alert(message_body):
+def plot_three_point_trendline_plotly(df: pd.DataFrame, pattern: dict, padding: int = PADDING_CANDLES):
+    i1 = pattern["pivot_1_idx"]
+    i2 = pattern["pivot_2_idx"]
+    i3 = pattern["pivot_3_idx"]
+
+    gstart = max(0, i1 - padding)
+    gend   = min(len(df) - 1, i3 + padding)
+
+    local_df = df.iloc[gstart:gend+1].copy()
+    local_df.reset_index(drop=True, inplace=True)
+
+    fig = go.Figure(data=[
+        go.Candlestick(
+            x=local_df["datetime"],
+            open=local_df["open"],
+            high=local_df["high"],
+            low=local_df["low"],
+            close=local_df["close"],
+            name="Price",
+            showlegend=False
+        )
+    ])
+
+    slope = pattern["slope"]
+    intercept = pattern["intercept"]
+
+    avg_range = df["high"].sub(df["low"]).rolling(50).mean().iloc[-1]
+    if pd.isna(avg_range) or avg_range == 0:
+        avg_range = 1
+    normalized_slope = slope / avg_range
+    angle_deg = np.degrees(np.arctan(normalized_slope))
+
+    global_idx = np.arange(gstart, gend + 1)
+    xs_rel = global_idx - i1
+    trend_y = slope * xs_rel + intercept
+
+    fig.add_trace(go.Scatter(
+        x=local_df["datetime"],
+        y=trend_y,
+        mode="lines",
+        name="3-Point Trendline",
+        line=dict(color="orange", width=2, dash="dash"),
+        showlegend=False
+    ))
+
+    pivot_idxs = [
+        pattern["pivot_1_idx"],
+        pattern["pivot_2_idx"],
+        pattern["pivot_3_idx"]
+    ]
+
+    pivot_x, pivot_y = [], []
+
+    for pi in pivot_idxs:
+        if gstart <= pi <= gend:
+            local_i = pi - gstart
+            pivot_x.append(local_df["datetime"].iloc[local_i])
+            if pattern["side"] == "high":
+                pivot_y.append(df["high"].iloc[pi])
+            else:
+                pivot_y.append(df["low"].iloc[pi])
+
+    fig.add_trace(go.Scatter(
+        x=pivot_x,
+        y=pivot_y,
+        mode="markers",
+        marker=dict(size=8, color="deepskyblue"),
+        name="Pivot Points",
+        showlegend=False
+    ))
+
+    fig.update_layout(
+        title=f"Pattern ({pattern['side'].upper()})<br>R²={pattern['r2']:.4f} | Slope={pattern['slope']:.4f} | Span={int(pattern['total_span'])} | Range={pattern['price_range']:.2f} | Angle={angle_deg:.1f}°",
+        xaxis_title="Time",
+        yaxis_title="Price",
+        template="plotly_dark",
+        xaxis_rangeslider_visible=False,
+        height=600,
+        width=1000,
+        margin=dict(l=30, r=30, b=30, t=60)
+    )
+    return fig
+
+def send_telegram_alert(message_body, image_path=None):
     if not all([TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID]):
         print("Required Telegram credentials missing in ENV. Skipping Telegram alert.")
         return
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    data = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message_body,
-        "parse_mode": "HTML"
-    }
-
     try:
-        response = requests.post(url, data=data)
+        if image_path and os.path.exists(image_path):
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+            data = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "caption": message_body[:1024],
+                "parse_mode": "HTML"
+            }
+            with open(image_path, "rb") as image_file:
+                files = {"photo": image_file}
+                response = requests.post(url, data=data, files=files)
+        else:
+            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            data = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": message_body,
+                "parse_mode": "HTML"
+            }
+            response = requests.post(url, data=data)
+            
         if response.status_code == 200:
             print("🚀 Telegram alert sent successfully!")
         else:
@@ -218,7 +314,7 @@ def send_telegram_alert(message_body):
     except Exception as e:
         print(f"❌ Error sending Telegram alert: {e}")
 
-def send_alert(pattern):
+def send_alert(pattern, df):
     detection_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     message = (
         f"🚨 <b>ALERT TRIGGERED AT:</b> {detection_time}\n\n"
@@ -234,7 +330,16 @@ def send_alert(pattern):
         f"• Price Range : {pattern['price_range']:.2f}\n"
     )
     print(f"\n{'='*60}\n{message.replace('<b>', '').replace('</b>', '')}{'='*60}\n")  
-    send_telegram_alert(message)
+    
+    os.makedirs("charts", exist_ok=True)
+    image_filename = f"charts/pattern_{int(time.time())}_{pattern['side']}.png"
+    try:
+        fig = plot_three_point_trendline_plotly(df, pattern)
+        fig.write_image(image_filename)
+        send_telegram_alert(message, image_path=image_filename)
+    except Exception as e:
+        print(f"Failed to generate plot: {e}")
+        send_telegram_alert(message)
 
 # ========================================== #
 #               MAIN LOOP ENGINE             #
@@ -284,7 +389,7 @@ def process_and_scan():
                 target_col = t["side"] 
                 t["price_1"], t["price_2"], t["price_3"] = df.loc[i1, target_col], df.loc[i2, target_col], df.loc[i3, target_col]
                 
-                send_alert(t)
+                send_alert(t, df)
                 SENT_ALERTS.add(pattern_id)
                 new_alerts_count += 1
         
