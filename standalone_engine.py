@@ -5,11 +5,10 @@ import numpy as np
 import requests
 from datetime import datetime
 import plotly.graph_objects as go
+import plotly.io as pio
 from scipy import stats
 import traceback
 from itertools import combinations
-import subprocess
-import glob
 
 # Optional: Load .env file for local development
 try:
@@ -19,14 +18,13 @@ except ImportError:
     pass
 
 # Configure Kaleido for Railway deployment
-# Automatically detect Chromium installed by Nixpacks on Railway
-try:
-    if not os.getenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'):
-        chromium_paths = glob.glob('/nix/store/*/bin/chromium')
-        if chromium_paths:
-            os.environ['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'] = chromium_paths[0]
-except Exception as e:
-    print(f"[INFO] Chromium detection skipped: {e}")
+# Set Chromium path for Kaleido (Docker sets CHROMIUM_PATH env variable)
+chromium_path = os.getenv('CHROMIUM_PATH', '/usr/bin/chromium-browser')
+if os.path.exists(chromium_path):
+    pio.kaleido.scope.chromium_path = chromium_path
+    print(f"[INFO] Kaleido configured to use Chromium at: {chromium_path}")
+else:
+    print(f"[WARNING] Chromium not found at {chromium_path}, image export may fail")
 
 # ========================================== #
 #               CONFIGURATION                #

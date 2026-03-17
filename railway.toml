@@ -1,8 +1,2 @@
 [build]
-builder = "nixpacks"
-
-[build.nixpacks]
-packages = ["chromium"]
-
-[env]
-PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = "/nix/store/*/bin/chromium"
+builder = "dockerfile"
