@@ -8,6 +8,8 @@ import plotly.graph_objects as go
 from scipy import stats
 import traceback
 from itertools import combinations
+import subprocess
+import glob
 
 # Optional: Load .env file for local development
 try:
@@ -15,6 +17,16 @@ try:
     load_dotenv()
 except ImportError:
     pass
+
+# Configure Kaleido for Railway deployment
+# Automatically detect Chromium installed by Nixpacks on Railway
+try:
+    if not os.getenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'):
+        chromium_paths = glob.glob('/nix/store/*/bin/chromium')
+        if chromium_paths:
+            os.environ['PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'] = chromium_paths[0]
+except Exception as e:
+    print(f"[INFO] Chromium detection skipped: {e}")
 
 # ========================================== #
 #               CONFIGURATION                #
