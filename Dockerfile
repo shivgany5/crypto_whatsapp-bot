@@ -2,13 +2,10 @@ FROM python:3.11-slim
 
 # Install Chrome and its dependencies
 RUN apt-get update && apt-get install -y \
-    chromium-browser \
-    chromium-common \
+    chromium \
     libx11-6 \
     libxcb1 \
     libxss1 \
-    libappindicator1 \
-    libindicator7 \
     fonts-liberation \
     xdg-utils \
     wget \
@@ -25,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set Chromium path for Kaleido
-ENV CHROMIUM_PATH=/usr/bin/chromium-browser
+ENV CHROMIUM_PATH=/usr/bin/chromium
 
 # Run the application
 CMD ["python", "standalone_engine.py"]

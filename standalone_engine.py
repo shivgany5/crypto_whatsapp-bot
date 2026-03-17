@@ -19,7 +19,7 @@ except ImportError:
 
 # Configure Kaleido for Railway deployment
 # Set Chromium path for Kaleido (Docker sets CHROMIUM_PATH env variable)
-chromium_path = os.getenv('CHROMIUM_PATH', '/usr/bin/chromium-browser')
+chromium_path = os.getenv('CHROMIUM_PATH', '/usr/bin/chromium')
 if os.path.exists(chromium_path):
     pio.kaleido.scope.chromium_path = chromium_path
     print(f"[INFO] Kaleido configured to use Chromium at: {chromium_path}")
