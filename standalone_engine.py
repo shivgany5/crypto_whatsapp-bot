@@ -33,7 +33,7 @@ else:
 # Real-Time Engine Config
 SYMBOL = "BTCUSD"
 RESOLUTION = "5m"
-LOOKBACK_CANDLES = 500  # was 500
+LOOKBACK_CANDLES = 250 # was 500
 POLL_INTERVAL = 300     # 5 minutes in seconds (matches candle size)
 DEFAULT_CSV = "data_standalone.csv"
 
@@ -42,7 +42,7 @@ PIVOT_LEFT = 2
 PIVOT_RIGHT = 2
 MIN_R2 = 0.996
 MIN_ABS_SLOPE = 1.5
-MAX_ABS_SLOPE = 25.0           # Upper slope cap
+MAX_ABS_SLOPE = 16.5           # Upper slope cap
 MAX_POINT_RESIDUAL = 1e4
 MIN_GAP = 6                    # was 4
 MAX_GAP = 100
