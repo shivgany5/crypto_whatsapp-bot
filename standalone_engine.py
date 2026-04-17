@@ -33,7 +33,7 @@ else:
 # Real-Time Engine Config
 SYMBOL = "BTCUSD"
 RESOLUTION = "5m"
-LOOKBACK_CANDLES = 250 # was 500
+LOOKBACK_CANDLES = 300 # was 500
 POLL_INTERVAL = 300     # 5 minutes in seconds (matches candle size)
 DEFAULT_CSV = "data_standalone.csv"
 
