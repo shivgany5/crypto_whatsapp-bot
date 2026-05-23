@@ -44,7 +44,7 @@ MIN_R2 = 0.9900
 MIN_ABS_SLOPE = 0.0
 MAX_ABS_SLOPE = 13.0          # Upper slope cap
 MAX_POINT_RESIDUAL = 1e4
-MIN_GAP = 12   
+MIN_GAP = 11   
 MAX_GAP = 100
 MIN_TOTAL_SPAN = 6
 MAX_TOTAL_SPAN = 300
@@ -54,8 +54,8 @@ MAX_CLOSE_VIOL = 0.0
 PADDING_CANDLES = 50           # was 50
 
 # --- Pattern Rejection Thresholds ---
-MIN_DIST_RATIO    = 0.85       # Compression filter threshold
-MIN_MAX_GAP_RATIO = 0.85       # Compression filter threshold
+MIN_DIST_RATIO    = 1.0       # Compression filter threshold
+MIN_MAX_GAP_RATIO = 1.0       # Compression filter threshold
 
 # Telegram Settings (Configured via Environment Variables)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
