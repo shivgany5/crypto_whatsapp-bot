@@ -1489,22 +1489,22 @@ DEFAULT_CSV = "data_standalone.csv"
 # Trendline & Pivot Config
 PIVOT_LEFT = 2
 PIVOT_RIGHT = 2
-MIN_R2 = 0.996
-MIN_ABS_SLOPE = 1.5
-MAX_ABS_SLOPE = 16.5           # Upper slope cap
+MIN_R2 = 0.9900
+MIN_ABS_SLOPE = 0.0
+MAX_ABS_SLOPE = 10.0          # Upper slope cap
 MAX_POINT_RESIDUAL = 1e4
-MIN_GAP = 6                    # was 4
+MIN_GAP = 12   
 MAX_GAP = 100
 MIN_TOTAL_SPAN = 6
 MAX_TOTAL_SPAN = 300
 MIN_PRICE_RANGE = 0.0
-MAX_LOOKAHEAD = 13             # was 8
+MAX_LOOKAHEAD = 25             
 MAX_CLOSE_VIOL = 0.0
 PADDING_CANDLES = 50           # was 50
 
 # --- Pattern Rejection Thresholds ---
-MIN_DIST_RATIO    = 0.65       # Compression filter threshold
-MIN_MAX_GAP_RATIO = 0.65       # Compression filter threshold
+MIN_DIST_RATIO    = 0.85       # Compression filter threshold
+MIN_MAX_GAP_RATIO = 0.85       # Compression filter threshold
 
 # Telegram Settings (Configured via Environment Variables)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
