@@ -40,9 +40,9 @@ DEFAULT_CSV = "data_standalone.csv"
 # Trendline & Pivot Config
 PIVOT_LEFT = 2
 PIVOT_RIGHT = 2
-MIN_R2 = 0.9900
+MIN_R2 = 0.9940
 MIN_ABS_SLOPE = 0.0
-MAX_ABS_SLOPE = 10.0          # Upper slope cap
+MAX_ABS_SLOPE = 10.65          # Upper slope cap
 MAX_POINT_RESIDUAL = 1e4
 MIN_GAP = 11   
 MAX_GAP = 100
